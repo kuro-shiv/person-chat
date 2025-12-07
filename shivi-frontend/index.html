@@ -18,6 +18,21 @@
 </head>
 <body>
 
+  <!-- Optional runtime env loader: create `env.js` in your frontend deployment that
+       contains `window.BACKEND_API_URL = 'https://your-backend.vercel.app'` -->
+  <script>
+    (function(){
+      try{
+        const s = document.createElement('script');
+        s.src = '/env.js';
+        s.async = true;
+        s.onload = function(){};
+        s.onerror = function(){};
+        document.head.appendChild(s);
+      }catch(e){ console.debug('no env.js'); }
+    })();
+  </script>
+
 <div class="app">
   <div class="header">Shivi – Best Friend 💚</div>
   <div id="chat" class="chat"></div>
@@ -28,7 +43,11 @@
 </div>
 
 <script>
-const BACKEND = "https://YOUR-BACKEND-URL.vercel.app";
+// BACKEND can be injected at runtime by creating `env.js` with:
+//   window.BACKEND_API_URL = 'https://your-backend.vercel.app'
+// Otherwise the client will use same-origin `/api/chat` (useful when frontend
+// and backend are deployed under the same project).
+const BACKEND = (window && window.BACKEND_API_URL) ? window.BACKEND_API_URL.replace(/\/$/, '') : '';
 
 let sid = localStorage.getItem("sid");
 if(!sid){
@@ -53,7 +72,9 @@ async function send(){
   add(text, "user");
   input.value = "";
 
-  const res = await fetch(BACKEND + "/api/chat",{
+  const url = BACKEND ? (BACKEND + "/api/chat") : "/api/chat";
+  // POST to backend URL (either same-origin or cross-origin)
+  const res = await fetch(url,{
     method:"POST",
     headers:{ "Content-Type":"application/json" },
     body: JSON.stringify({ sessionId: sid, message: text, name: "Shreya" })

@@ -1,28 +1,24 @@
 const express = require("express");
 const cors = require("cors");
 const axios = require("axios");
-const { MongoClient } = require("mongodb");
+const db = require('./db');
 require("dotenv").config();
 
 const app = express();
-app.use(cors());
+// Configure CORS: if ALLOWED_ORIGIN is set in env, restrict to that origin.
+const ALLOWED = process.env.ALLOWED_ORIGIN;
+if(ALLOWED){
+  app.use(cors({ origin: ALLOWED }));
+  console.log('CORS restricted to:', ALLOWED);
+}else{
+  app.use(cors());
+  console.log('CORS: allowing all origins (not recommended for production)');
+}
 app.use(express.json());
 
 const COHERE_KEY = process.env.COHERE_API_KEY;
 const COHERE_MODEL = process.env.COHERE_MODEL || "command-r-08-2024";
-const MONGO_URI = process.env.MONGODB_URI;
-const DB_NAME = process.env.MONGODB_DB || "shivi";
-
-let db;
-
-async function connectDB(){
-  if(db) return db;
-  const client = new MongoClient(MONGO_URI);
-  await client.connect();
-  db = client.db(DB_NAME);
-  console.log("✅ Mongo connected");
-  return db;
-}
+// DB helper is in `db.js` — it will warn if `MONGODB_URI` is not set.
 
 app.post("/api/chat", async (req, res) => {
   try{
@@ -31,20 +27,10 @@ app.post("/api/chat", async (req, res) => {
       return res.status(400).json({ error: "Missing sessionId or message" });
     }
 
-    const database = await connectDB();
-    const col = database.collection("messages");
-
-    await col.insertOne({
-      sessionId,
-      role: "user",
-      text: message,
-      createdAt: new Date()
-    });
-
-    const history = await col.find({ sessionId })
-      .sort({ createdAt: 1 })
-      .limit(20)
-      .toArray();
+    // save user message
+    await db.saveMessage(sessionId, 'user', message);
+    // fetch recent history
+    const history = await db.getHistory(sessionId, 20);
 
     const messages = [
       {
@@ -80,12 +66,7 @@ Use emojis 💚😄🫂`,
 
     const reply = r.data.message?.content?.[0]?.text || "Shivi busy hai thoda 😅";
 
-    await col.insertOne({
-      sessionId,
-      role: "assistant",
-      text: reply,
-      createdAt: new Date()
-    });
+    await db.saveMessage(sessionId, 'assistant', reply);
 
     res.json({ reply });
   }catch(err){
