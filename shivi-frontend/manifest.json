@@ -1,0 +1,8 @@
+{
+  "name": "Shivi AI",
+  "short_name": "Shivi",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#e6f4f3",
+  "theme_color": "#009688"
+}
