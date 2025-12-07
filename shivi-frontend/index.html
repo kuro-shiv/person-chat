@@ -19,7 +19,7 @@
 <body>
 
   <!-- Optional runtime env loader: create `env.js` in your frontend deployment that
-       contains `window.BACKEND_API_URL = 'https://your-backend.vercel.app'` -->
+       contains `BACKEND_API_URL = 'https://your-backend.vercel.app'` -->
   <script>
     (function(){
       try{
@@ -44,10 +44,10 @@
 
 <script>
 // BACKEND can be injected at runtime by creating `env.js` with:
-//   window.BACKEND_API_URL = 'https://your-backend.vercel.app'
+//   BACKEND_API_URL = 'https://your-backend.vercel.app'
 // Otherwise the client will use same-origin `/api/chat` (useful when frontend
 // and backend are deployed under the same project).
-const BACKEND = (window && window.BACKEND_API_URL) ? window.BACKEND_API_URL.replace(/\/$/, '') : '';
+const BACKEND = (window && BACKEND_API_URL) ? BACKEND_API_URL.replace(/\/$/, '') : '';
 
 let sid = localStorage.getItem("sid");
 if(!sid){
